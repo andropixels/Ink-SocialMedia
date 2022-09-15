@@ -1,1 +1,1 @@
-# Ink-SocialMedia
+# decentralize-SocialMedia  building on ink! 
