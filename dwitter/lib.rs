@@ -23,7 +23,7 @@ mod dwitter {
 #[derive(Debug)]    
     
     enum accountStatus{NP,Active,Banned,Deactivated}
-    #[derive(Debug,Encode)]
+    #[derive(Debug)]
     enum cdStatus{NP,Active, Banned, Deleted}//Comment-Dweet status
 
     
@@ -139,7 +139,7 @@ mod dwitter {
         /// We test a simple use case of our contract.
         #[ink::test]
         fn it_works() {
-            let mut dwitter = Dwitter::new(false);
+            let mut dwitter = Dwitter::new(false,String::from("user1"),String::from("username"),String::from("userbio"));
             assert_eq!(dwitter.get(), false);
             dwitter.flip();
             assert_eq!(dwitter.get(), true);
