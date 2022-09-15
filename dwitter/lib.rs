@@ -2,12 +2,12 @@
 
 use ink_lang as ink;
 use ink_storage::Mapping;
-
 #[ink::contract]
 mod dwitter {
     // use ink_env::AccountId;
 
     use ink_storage::Mapping;
+    use scale::Encode;
 
 
     /// Defines the storage of your contract.
@@ -17,14 +17,17 @@ mod dwitter {
     pub struct Dwitter {
         /// Stores a single `bool` value on the storage.
         value: bool,
-        users:Mapping<AccountId,User>
+        user:User
     }
-
+    
+#[derive(Debug)]    
+    
     enum accountStatus{NP,Active,Banned,Deactivated}
-
+    #[derive(Debug,Encode)]
     enum cdStatus{NP,Active, Banned, Deleted}//Comment-Dweet status
 
     
+#[derive(Debug)]    
       pub struct User{
         id :i64,
         address: AccountId,
@@ -35,7 +38,25 @@ mod dwitter {
          bio:String,
         status :accountStatus // Account Banned or Not
     }
-    #[ink(event)]
+
+    impl ink_storage::traits::SpreadLayout for User {
+        const FOOTPRINT: u64 = 1;
+    
+        fn pull_spread(ptr: &mut ink_primitives::KeyPtr) -> Self {
+            Self { id: ink_storage::traits::SpreadLayout::pull_spread(ptr), address: todo!(), username: todo!(), name: todo!(), profileImgHash: todo!(), profileCoverImgHash: todo!(), bio: todo!(), status: todo!() }
+        }
+    
+        fn push_spread(&self, ptr: &mut ink_primitives::KeyPtr) {
+            ink_storage::traits::SpreadLayout::push_spread(&self.id, ptr);
+        }
+    
+        fn clear_spread(&self, ptr: &mut ink_primitives::KeyPtr) {
+            ink_storage::traits::SpreadLayout::clear_spread(&self.id, ptr);
+        }
+    }
+    
+    
+    
     pub struct Dweet {
         dweetId:i128,
         author:AccountId,
@@ -53,13 +74,25 @@ mod dwitter {
     impl Dwitter {
         /// Constructor that initializes the `bool` value to the given `init_value`.
         #[ink(constructor)]
-        pub fn new(init_value: bool,username:String,name:String,status:accountStatus) -> Self {
-            let mut users = Mapping::default();
-            let caller = 
+        pub fn new(init_value: bool,username:String,name:String,bio:String) -> Self {
+            // let mut users = Mapping::default();
+            let caller = Self::env().caller();
+
             let user = User {
+                id:0,
+               address:caller,
+               username,
+               name:username,
+               profileImgHash:String::from(""),
+               profileCoverImgHash:String::from(""),
+               bio,
+               status:accountStatus::Active
+
+
                 
-            }
-            Self { value: init_value }
+            };
+            // users.insert(caller, &user);
+            Self { value: init_value ,user}
         }
 
         /// Constructor that initializes the `bool` value to `false`.
@@ -67,7 +100,7 @@ mod dwitter {
         /// Constructors can delegate to other constructors.
         #[ink(constructor)]
         pub fn default() -> Self {
-            Self::new(Default::default())
+            Self::new(Default::default(),String::from("user1"),String::from("username"),String::from("userbio"))
         }
 
         /// A message that can be called on instantiated contracts.
