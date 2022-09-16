@@ -20,9 +20,11 @@ mod dwitter {
         user:User,
         totalDweet:i128,
         dweets:Mapping<i128,Dweet>,
-        dweetLikers:Mapping<i128,AccountId>
+        dweetLikers:Mapping<i128,AccountId>,
+        comments:Mapping<AccountId,Comment>
     }
-#[derive(Debug)]    
+    #[derive( ink_storage::traits::SpreadLayout,ink_storage::traits::PackedLayout,Encode,Decode)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     
     enum accountStatus{NP,Active,Banned,Deactivated}
       
@@ -32,7 +34,8 @@ mod dwitter {
     enum cdStatus{NP,Active, Banned, Deleted}//Comment-Dweet status
 
     
-#[derive(Debug)]    
+    #[derive(ink_storage::traits::StorageLayout,ink_storage::traits::SpreadAllocate, ink_storage::traits::SpreadLayout,ink_storage::traits::PackedLayout,Encode,Decode,Debug)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
       pub struct User{
         id :i64,
         address: AccountId,
@@ -41,25 +44,11 @@ mod dwitter {
          profileImgHash:String,
          profileCoverImgHash:String,
          bio:String,
-        status :accountStatus // Account Banned or Not
+        // Account Banned or Not
     }
 
-    impl ink_storage::traits::SpreadLayout for User {
-        const FOOTPRINT: u64 = 1;
     
-        fn pull_spread(ptr: &mut ink_primitives::KeyPtr) -> Self {
-            Self { id: ink_storage::traits::SpreadLayout::pull_spread(ptr), address: todo!(), username: todo!(), name: todo!(), profileImgHash: todo!(), profileCoverImgHash: todo!(), bio: todo!(), status: todo!() }
-        }
-    
-        fn push_spread(&self, ptr: &mut ink_primitives::KeyPtr) {
-            ink_storage::traits::SpreadLayout::push_spread(&self.id, ptr);
-        }
-    
-        fn clear_spread(&self, ptr: &mut ink_primitives::KeyPtr) {
-            ink_storage::traits::SpreadLayout::clear_spread(&self.id, ptr);
-        }
-    }
-    
+
     
     
     #[derive(ink_storage::traits::SpreadAllocate, ink_storage::traits::SpreadLayout,ink_storage::traits::PackedLayout,Encode,Decode)]
@@ -72,17 +61,21 @@ mod dwitter {
         imgHash:String,
         timestamp:i128,
         likecount:i128,
+        commentCount:i128,
         reportCount:i128,
         // status:cdStatus
 
     }
-
+    #[derive(ink_storage::traits::SpreadAllocate, ink_storage::traits::SpreadLayout,ink_storage::traits::PackedLayout,Encode,Decode)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub struct Comment {
         commentId:i128,
         author:AccountId,
         dweetId:i128,
         content:String,
         likeCount:i128,
+        timestamp:i128,
+
         
     }
 
@@ -110,25 +103,30 @@ mod dwitter {
         /// Constructor that initializes the `bool` value to the given `init_value`.
         #[ink(constructor)]
         pub fn new(init_value: bool,username:String,name:String,bio:String) -> Self {
+
+          
              let mut dweets = Mapping::default();
              let mut dweetLikers = Mapping::default();
+             let mut comments = Mapping::default();
+
             let caller = Self::env().caller();
 
             let user = User {
                 id:0,
                address:caller,
                username,
-               name:username,
+               name:name,
                profileImgHash:String::from(""),
                profileCoverImgHash:String::from(""),
                bio,
-               status:accountStatus::Active
+               
 
 
                 
             };
             // users.insert(caller, &user);
-            Self { value: init_value ,user,totalDweet:0,dweets,dweetLikers:dweetLikers}
+            Self { value: init_value ,user,totalDweet:0,dweets,dweetLikers:dweetLikers,comments}
+            
         }
 
         /// Constructor that initializes the `bool` value to `false`.
@@ -136,7 +134,8 @@ mod dwitter {
         /// Constructors can delegate to other constructors.
         #[ink(constructor)]
         pub fn default() -> Self {
-            Self::new(Default::default(),String::from("user1"),String::from("username"),String::from("userbio"))
+             Self::new(Default::default(),String::from("user1"),String::from("username"),String::from("userbio"))
+            
         }
 
         /// A message that can be called on instantiated contracts.
@@ -155,11 +154,11 @@ mod dwitter {
 
 
         #[ink(message)]
-       pub fn createDweet(&self , hashtag:String,content:String,imghash:String) {
+       pub fn createDweet(&mut self , hashtag:String,content:String,imghash:String) {
               self.totalDweet.checked_add(1);
               let id = self.totalDweet;
               let caller = self.env().caller();
-            let  dweet = Dweet{
+            let mut  dweet = Dweet{
                 dweetId:id,
                 author:caller,
                 hashtag,
@@ -167,6 +166,7 @@ mod dwitter {
                 imgHash:imghash,
                 timestamp:0,
                 likecount:0,
+                commentCount:0,
                 reportCount:0
               };
               self.dweets.insert(id, &dweet); 
@@ -184,7 +184,7 @@ mod dwitter {
        }
    
        #[ink(message)]
-       pub fn likeDweet(&self,id:i128){
+       pub fn likeDweet(&mut self,id:i128){
          let caller = self.env().caller(); 
         let mut dweet =self.dweets.get(id).unwrap();
         dweet.likecount.checked_add(1);
@@ -195,9 +195,26 @@ mod dwitter {
        }
 
        #[ink(message)]
-       pub fn create_comment(&self,id:i128,comment:String){
+       pub fn create_comment(&mut self,id:i128,comment:String){
         // let mut dweet = self.dweets.get(id).unwrap();
         // dweet.c
+        // let mut comment = self.comments.get
+        let caller = self.env().caller();
+        let mut comment = Comment {
+            commentId:0,
+            author:caller,
+            dweetId:id,
+            content:comment,
+            likeCount:0,
+            timestamp:0
+
+
+        };
+
+
+      self.comments.insert(caller, &comment);
+      let mut dweet = self.dweets.get(id).unwrap();
+      dweet.commentCount.checked_add(1);
 
        }
 
