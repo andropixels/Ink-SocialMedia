@@ -1,12 +1,23 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use ink_lang as ink;
-use ink_storage::Mapping;
+
+
+
+
 #[ink::contract]
 mod dwitter {
     // use ink_env::AccountId;
 
     use ink_storage::Mapping;
+    // use ink::crates::prelude::{
+    //     string::{
+    //         String,
+    //         ToString,
+    //     },
+    //     vec::Vec,
+    // };
+    use ink_prelude::string::String; 
     use scale::{Encode, Decode};
 
 
@@ -14,6 +25,7 @@ mod dwitter {
     /// Add new fields to the below struct in order
     /// to add new static storage fields to your contract.
     #[ink(storage)]
+    #[derive(ink_storage::traits::SpreadAllocate)]
     pub struct Dwitter {
         /// Stores a single `bool` value on the storage.
         value: bool,
@@ -21,7 +33,8 @@ mod dwitter {
         totalDweet:i128,
         dweets:Mapping<i128,Dweet>,
         dweetLikers:Mapping<i128,AccountId>,
-        comments:Mapping<AccountId,Comment>
+        comments:Mapping<AccountId,Comment>,
+        test:i32
     }
     #[derive( ink_storage::traits::SpreadLayout,ink_storage::traits::PackedLayout,Encode,Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -104,6 +117,10 @@ mod dwitter {
         #[ink(constructor)]
         pub fn new(init_value: bool,username:String,name:String,bio:String) -> Self {
 
+            ink_lang::utils::initialize_contract(|contract: &mut Self| {
+                let caller = Self::env().caller();
+                
+            });
           
              let mut dweets = Mapping::default();
              let mut dweetLikers = Mapping::default();
@@ -125,7 +142,8 @@ mod dwitter {
                 
             };
             // users.insert(caller, &user);
-            Self { value: init_value ,user,totalDweet:0,dweets,dweetLikers:dweetLikers,comments}
+            
+            Self { value: init_value ,user,totalDweet:0,dweets,dweetLikers:dweetLikers,comments,test:0}
             
         }
 
@@ -134,7 +152,8 @@ mod dwitter {
         /// Constructors can delegate to other constructors.
         #[ink(constructor)]
         pub fn default() -> Self {
-             Self::new(Default::default(),String::from("user1"),String::from("username"),String::from("userbio"))
+            //  Self::new(Default::default(),String::from("user1"),String::from("username"),String::from("userbio"))
+            ink_lang::utils::initialize_contract(|_| {})
             
         }
 
@@ -169,6 +188,7 @@ mod dwitter {
                 commentCount:0,
                 reportCount:0
               };
+              self.test.checked_add(1);
               self.dweets.insert(id, &dweet); 
 
               self.env().emit_event( DweetCreated{ id });
