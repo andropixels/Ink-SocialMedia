@@ -7,8 +7,7 @@ use ink_lang as ink;
 
 #[ink::contract]
 mod dwitter {
-    // use ink_env::AccountId;
-
+    
     use ink_storage::Mapping;
     // use ink::crates::prelude::{
     //     string::{
