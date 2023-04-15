@@ -2,7 +2,6 @@
 
 use ink_lang as ink;
 
-
 #[ink::contract]
 mod dwitter {
     
