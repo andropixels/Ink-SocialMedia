@@ -1,7 +1,5 @@
 # decentralize-SocialMedia  with substrate ink! and wasm  
 
-
-
 ## Inspiration 
    ### A Wasm  Dapp inspired from twitter built with ink! and substrate  
    
